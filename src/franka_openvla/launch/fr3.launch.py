@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright 2026 Rithwik Reddy Eedula
+# Licensed under the Apache License, Version 2.0
 import os
 import xacro, yaml
 from ament_index_python.packages import get_package_share_directory

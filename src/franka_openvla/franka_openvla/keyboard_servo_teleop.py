@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright 2026 Rithwik Reddy Eedula
+# Licensed under the Apache License, Version 2.0
 
 import rclpy
 from rclpy.node import Node

@@ -1,3 +1,5 @@
+# Copyright 2026 Rithwik Reddy Eedula
+# Licensed under the Apache License, Version 2.0
 # VLA Action message - represents delta end-effector pose + gripper command
 # All pose values are DELTAS (relative changes), not absolute positions
 
