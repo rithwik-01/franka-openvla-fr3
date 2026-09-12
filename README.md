@@ -1,6 +1,6 @@
 # OpenVLA-FR3: Vision-Language-Action Robot Control
 
-A complete ROS2 integration enabling natural language control of the Franka FR3 robotic arm using OpenVLA (7B vision-language-action model) with real-time reactive control via MoveIt Servo.
+Natural language control for the Franka FR3 robotic arm, combining the OpenVLA 7B vision-language-action model with real-time reactive control through MoveIt Servo.
 
 [![ROS2 Humble](https://img.shields.io/badge/ROS2-Humble-blue)](https://docs.ros.org/en/humble/)
 [![OpenVLA](https://img.shields.io/badge/Model-OpenVLA--7B-orange)](https://openvla.github.io/)
@@ -8,78 +8,97 @@ A complete ROS2 integration enabling natural language control of the Franka FR3 
 [![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey)](https://ubuntu.com/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
----
+## Contents
+
+- [Overview](#overview)
+- [How It Works](#how-it-works)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+- [Simulation Environment](#simulation-environment)
+- [Configuration](#configuration)
+- [Development](#development)
+- [Technical Reference](#technical-reference)
+- [License](#license)
 
 ## Overview
 
-This project bridges large vision-language models with real-time robot control, enabling the Franka FR3 to understand natural language instructions and execute manipulation tasks autonomously. The system uses a quantized OpenVLA model for inference on consumer GPUs and MoveIt Servo for reactive Cartesian control.
+This project connects large vision-language models to real-time robot control. It allows the Franka FR3 to interpret plain English instructions and carry out manipulation tasks on its own. A quantized OpenVLA model runs inference on consumer GPUs, while MoveIt Servo provides reactive Cartesian control.
 
-**Key Innovation:** Delta action formulation with VLA-Servo bridge pattern enables reactive, collision-aware motion while maintaining the benefits of learned visuomotor policies.
+The core idea is a delta action formulation paired with a VLA-Servo bridge: the learned policy outputs relative pose changes, and the bridge turns them into collision-aware velocity commands. This keeps the benefits of a learned visuomotor policy while gaining the reactivity of servo control.
 
----
+## How It Works
 
-## System Architecture
-
-```
-Natural Language Instruction → OpenVLA-7B (4-bit quantized)
-                                    ↓
-                            Camera Image (RGB)
-                                    ↓
-                        VLAAction (delta pose + gripper)
-                                    ↓
-                            VLA-Servo Bridge
-                                    ↓
-                    TwistStamped (velocity commands)
-                                    ↓
-                            MoveIt Servo
-                                    ↓
-                        Joint Trajectory Controller
-                                    ↓
-                        Gazebo Simulation / Real Hardware
+```text
+Natural Language Instruction --> OpenVLA-7B (4-bit quantized)
+                                      |
+                           Camera Image (RGB)
+                                      |
+                      VLAAction (delta pose + gripper)
+                                      |
+                              VLA-Servo Bridge
+                                      |
+                      TwistStamped (velocity commands)
+                                      |
+                                 MoveIt Servo
+                                      |
+                         Joint Trajectory Controller
+                                      |
+                       Gazebo Simulation / Real Hardware
 ```
 
----
+Each control cycle follows the same loop: perceive the scene, predict a delta action from the image and instruction, translate it into a twist command, solve for collision-free joint velocities, execute, and observe the result.
 
 ## Features
 
-### Core Capabilities
-- **Vision-Language-Action Inference**: OpenVLA-7B fine-tuned on LIBERO spatial tasks
-- **4-bit Quantization**: Runs on consumer GPUs (6GB VRAM) using BitsAndBytes
-- **Real-Time Control**: MoveIt Servo for reactive Cartesian velocity control at 30Hz
-- **Delta Action Formulation**: Relative pose changes enable reactive, closed-loop control
-- **Collision Awareness**: MoveIt planning scene monitoring with automatic collision avoidance
-- **Natural Language Interface**: Task specification via plain English instructions
+### Perception and Inference
 
-### Control Modes
-- **Autonomous VLA Control**: Vision-language-conditioned action prediction
-- **Keyboard Teleoperation**: Manual control for data collection and debugging
-- **Dual Frame Control**: Base frame or end-effector frame reference
-- **Multiple Controllers**: Position, velocity, impedance, and trajectory control
+- Vision-language-action inference with OpenVLA-7B, fine-tuned on LIBERO spatial tasks
+- 4-bit quantization via BitsAndBytes, fitting inference into 6 GB of VRAM
+- Natural language task specification in plain English
 
-### Development Tools
-- **Docker Environment**: Containerized setup with CUDA 12.1, ROS2 Humble, PyTorch
-- **LIBERO-Compatible**: Camera positioning and task environment match LIBERO benchmark
-- **RViz Visualization**: Interactive motion planning interface
-- **Gazebo Simulation**: Full physics simulation with RGB-D sensors
+### Real-Time Control
 
----
+- Reactive Cartesian velocity control through MoveIt Servo at 30 Hz
+- Delta action formulation for closed-loop, relative-pose control
+- Collision awareness via MoveIt planning scene monitoring
+- Dual-frame control with base frame or end-effector frame reference
 
-## Architecture Components
+### Interfaces and Tooling
 
-### Custom ROS2 Packages
+- Autonomous VLA control plus keyboard teleoperation for data collection and debugging
+- Position, velocity, impedance, and trajectory controllers
+- Docker environment with CUDA 12.1, ROS2 Humble, and PyTorch
+- LIBERO-compatible camera placement and task setup
+- RViz visualization and full-physics Gazebo simulation with RGB-D sensing
 
-#### 1. `franka_openvla`
-Main integration package containing:
-- **openvla_node.py**: VLA inference with 4-bit quantization
-- **vla_servo_bridge.py**: Translates VLA actions to Servo twist commands
-- **keyboard_servo_teleop.py**: Manual teleoperation for data collection
-- **fr3.launch.py**: Orchestrates entire system (Gazebo, MoveIt, Servo, VLA)
-- World files and object models (bins, cubes, tables)
-- Configuration files for Servo and controllers
+## Architecture
 
-#### 2. `vla_interfaces`
-Custom message definitions:
-```
+### ROS2 Packages
+
+| Package | Role |
+| ------- | ---- |
+| `franka_openvla` | Integration package: VLA inference, VLA-Servo bridge, keyboard teleoperation, launch, worlds, and object models |
+| `vla_interfaces` | Custom message definitions (`VLAAction`) |
+| `franka_gazebo` | Simulation support |
+| `franka_fr3_moveit_config` | MoveIt configuration |
+| `franka_hardware` | Real robot interface |
+| `franka_gripper` | Gripper control |
+| `franka_msgs` | Franka messages |
+
+### Key Nodes in `franka_openvla`
+
+| Node | Purpose |
+| ---- | ------- |
+| `openvla_node.py` | VLA inference with 4-bit quantization |
+| `vla_servo_bridge.py` | Translates VLA actions into Servo twist commands |
+| `keyboard_servo_teleop.py` | Manual teleoperation for data collection |
+| `fr3.launch.py` | Launches the full system (Gazebo, MoveIt, Servo, VLA) |
+
+### Message Interface
+
+```text
 VLAAction.msg:
   std_msgs/Header header
   geometry_msgs/Vector3 delta_pos    # [dx, dy, dz] in meters
@@ -87,58 +106,61 @@ VLAAction.msg:
   float32 gripper                     # 0.0 = open, 1.0 = closed
 ```
 
-### System Integration
+### Node Parameters
 
-#### OpenVLA Node
-- **Model**: `openvla/openvla-7b-finetuned-libero-spatial`
-- **Input**: RGB images from `/rgbd_camera/image` (640x480)
-- **Output**: Delta actions published to `/vla/delta_actions`
-- **Parameters**:
-  - `instruction`: Task description (e.g., "pick the cube and place in red bin")
-  - `unnorm_key`: Action unnormalization (default: `libero_spatial`)
-  - `model_name`: HuggingFace model path
+**OpenVLA node** (`openvla/openvla-7b-finetuned-libero-spatial`):
 
-#### VLA-Servo Bridge
-- **Converts**: VLAAction → TwistStamped
-- **Safety**: Velocity clamping (max linear: 0.3 m/s, max angular: 0.5 rad/s)
-- **Timeout**: Stops motion if no VLA action received within 0.5s
-- **Keepalive**: Maintains Servo connection with periodic zero commands
+| Item | Value |
+| ---- | ----- |
+| Input | RGB images from `/rgbd_camera/image` (640x480) |
+| Output | Delta actions on `/vla/delta_actions` |
+| `instruction` | Task description, e.g. "pick the cube and place in red bin" |
+| `unnorm_key` | Action unnormalization (default: `libero_spatial`) |
+| `model_name` | HuggingFace model path |
 
-#### MoveIt Servo Configuration
-- **Control rate**: 30 Hz
-- **Planning group**: `fr3_arm` (7-DOF)
-- **End-effector**: `fr3_hand_tcp`
-- **Collision checking**: 10 Hz with singularity avoidance
-- **Joint limits**: Enforced with safety margins
+**VLA-Servo bridge** (VLAAction to TwistStamped):
 
----
+- Velocity clamping (max linear 0.3 m/s, max angular 0.5 rad/s)
+- Motion timeout stopping the robot if no VLA action arrives within 0.5 s
+- Keepalive with periodic zero commands to hold the Servo connection
 
-## Installation
+**MoveIt Servo:**
+
+- Control rate of 30 Hz on planning group `fr3_arm` (7-DOF)
+- End-effector `fr3_hand_tcp` with collision checking at 10 Hz
+- Singularity avoidance with enforced joint limits plus safety margins
+
+## Quick Start
 
 ### Prerequisites
+
 - Ubuntu 22.04
-- NVIDIA GPU with CUDA support (6GB+ VRAM recommended)
-- Docker and Docker Compose with NVIDIA runtime
+- NVIDIA GPU with CUDA support (6 GB+ VRAM recommended)
+- Docker and Docker Compose with the NVIDIA runtime
 
 ### Setup
 
-1. **Clone repository**:
+1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd openvla-fr3
 ```
 
-2. **Build Docker container**:
+2. Build the Docker container:
+
 ```bash
 docker-compose build
 ```
 
-3. **Launch container**:
+3. Launch the container:
+
 ```bash
 docker-compose up -d
 ```
 
-4. **Build ROS2 workspace** (first time only):
+4. Build the ROS2 workspace (first time only):
+
 ```bash
 docker exec -it vla_unified bash
 source /opt/ros/humble/setup.bash
@@ -147,11 +169,9 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
----
-
 ## Usage
 
-### Launch Full System
+### Launch the Full System
 
 Start the complete VLA control stack (Gazebo, MoveIt, Servo, OpenVLA):
 
@@ -163,15 +183,18 @@ docker exec vla_unified bash -c "
 "
 ```
 
-This launches:
-- Gazebo simulation with FR3 and manipulation environment
-- ROS2 controllers (joint state, arm, gripper)
-- MoveIt move_group with OMPL planning
-- MoveIt Servo for real-time control
-- RViz for visualization
-- OpenVLA inference node
-- VLA-Servo bridge
-- RGB-D camera with LIBERO-style positioning
+This single launch brings up:
+
+| Component | Description |
+| --------- | ----------- |
+| Gazebo | FR3 simulation with the manipulation environment |
+| ROS2 controllers | Joint state, arm, and gripper controllers |
+| MoveIt `move_group` | OMPL-based motion planning |
+| MoveIt Servo | Real-time Cartesian control |
+| RViz | Interactive visualization and planning interface |
+| OpenVLA node | Vision-language inference |
+| VLA-Servo bridge | Action-to-twist translation |
+| RGB-D camera | LIBERO-style viewpoint with image, depth, point cloud, and camera info |
 
 ### Keyboard Teleoperation
 
@@ -185,17 +208,22 @@ docker exec -it vla_unified bash -c "
 "
 ```
 
-**Controls**:
-- **Linear**: W/S (X), A/D (Y), Q/E (Z)
-- **Angular**: J/L (yaw), I/K (pitch), U/O (roll)
-- **Frame Toggle**: F (base frame ↔ end-effector frame)
-- **Speed**: +/- (increase/decrease velocity scaling)
-- **Stop**: SPACE
-- **Quit**: ESC
+| Keys | Action |
+| ---- | ------ |
+| W / S | Translate along X |
+| A / D | Translate along Y |
+| Q / E | Translate along Z |
+| J / L | Yaw |
+| I / K | Pitch |
+| U / O | Roll |
+| F | Toggle base frame and end-effector frame |
+| + / - | Increase or decrease velocity scaling |
+| SPACE | Stop all motion |
+| ESC | Quit teleoperation |
 
-### Change VLA Task Instruction
+### Change the VLA Task Instruction
 
-Modify the instruction parameter in `fr3.launch.py`:
+Edit the instruction parameter in `fr3.launch.py`:
 
 ```python
 Node(
@@ -208,46 +236,41 @@ Node(
 )
 ```
 
-Or pass as launch argument:
+Or pass it as a launch argument:
+
 ```bash
 ros2 launch franka_openvla fr3.launch.py instruction:="move the object to the blue bin"
 ```
 
----
-
 ## Simulation Environment
 
-The Gazebo world includes:
-- **Work Table**: Main manipulation surface (0.6m from robot base)
-- **Colored Bins**: Green, black, red, blue bins for sorting tasks
-- **Target Cube**: Manipulable object on table
-- **RGB-D Camera**: LIBERO-style agentview
-  - Position: 1.2m forward, 1.0m height
-  - Orientation: Looking at robot workspace
-  - Outputs: RGB image, depth, point cloud, camera info
+The Gazebo world contains:
 
----
+- Work table as the main manipulation surface (0.6 m from the robot base)
+- Colored bins (green, black, red, blue) for sorting tasks
+- Target cube placed on the table
+- RGB-D camera in a LIBERO-style agent viewpoint, 1.2 m forward at 1.0 m height and aimed at the workspace, publishing RGB image, depth, point cloud, and camera info
 
 ## Configuration
 
 ### Key Configuration Files
 
-1. **`config/servo_params.yaml`**: MoveIt Servo settings
-   - Velocity limits (linear: 0.4 m/s, rotational: 0.8 rad/s)
+1. `config/servo_params.yaml` (MoveIt Servo settings):
+   - Velocity limits (linear 0.4 m/s, rotational 0.8 rad/s)
    - Control rate (30 Hz)
-   - Safety factors (0.3x for conservative control)
+   - Safety scaling factor (0.3x for conservative control)
    - Collision checking parameters
 
-2. **`config/moveit_controllers.yaml`**: Controller interfaces
-   - arm_controller (FollowJointTrajectory)
-   - gripper_controller (GripperCommand)
+2. `config/moveit_controllers.yaml` (controller interfaces):
+   - `arm_controller` (FollowJointTrajectory)
+   - `gripper_controller` (GripperCommand)
 
-3. **`config/franka_gazebo_controllers.yaml`**: Gazebo ros2_control
+3. `config/franka_gazebo_controllers.yaml` (Gazebo `ros2_control`):
    - Joint state broadcaster
    - Position, velocity, and impedance controllers
    - Controller gains and limits
 
-### Adjusting VLA-Servo Bridge Parameters
+### Tuning the VLA-Servo Bridge
 
 Edit `franka_openvla/vla_servo_bridge.py`:
 
@@ -259,13 +282,11 @@ self.max_angular = 0.5     # Max angular velocity (rad/s)
 self.timeout = 0.5         # Command timeout (seconds)
 ```
 
----
-
 ## Development
 
 ### Project Structure
 
-```
+```text
 openvla-fr3/
 ├── src/
 │   ├── franka_openvla/           # Main integration package
@@ -313,34 +334,34 @@ ros2 run franka_openvla vla_servo_bridge
 ros2 run franka_openvla keyboard_servo_teleop
 ```
 
----
-
-## Technical Details
+## Technical Reference
 
 ### OpenVLA Model
 
-- **Architecture**: Vision encoder + language encoder + action decoder
-- **Parameters**: 7 billion (4-bit quantized to ~3.5GB memory)
-- **Training**: Fine-tuned on LIBERO spatial manipulation tasks
-- **Inference Speed**: ~5-10 Hz on consumer GPUs (RTX 3060+)
-- **Action Space**: 7-DOF delta actions (3 position + 3 orientation + 1 gripper)
+- Architecture combining a vision encoder, a language encoder, and an action decoder
+- 7 billion parameters, quantized to 4-bit at roughly 3.5 GB of memory
+- Fine-tuned on LIBERO spatial manipulation tasks
+- Inference speed of about 5-10 Hz on consumer GPUs (RTX 3060 and above)
+- Action space of 7-DOF delta actions (3 position, 3 orientation, 1 gripper)
 
 ### Control Pipeline
 
-1. **Perception**: RGB camera image captured at 30 Hz
-2. **Inference**: OpenVLA predicts delta action from image + instruction
-3. **Translation**: VLA-Servo bridge converts to twist commands
-4. **Planning**: MoveIt Servo computes collision-free joint velocities
-5. **Execution**: Joint trajectory controller sends commands to robot
-6. **Feedback**: Loop closes with new camera observation
+1. Perception: RGB camera image captured at 30 Hz
+2. Inference: OpenVLA predicts a delta action from the image and instruction
+3. Translation: the VLA-Servo bridge converts the action into twist commands
+4. Planning: MoveIt Servo computes collision-free joint velocities
+5. Execution: the joint trajectory controller drives the robot
+6. Feedback: the loop closes with the next camera observation
 
 ### Safety Features
 
-- **Velocity Clamping**: Multi-level limits (VLA bridge + Servo + controller)
-- **Collision Checking**: Real-time monitoring with planning scene
-- **Singularity Avoidance**: Automatic damping near singularities
-- **Command Timeout**: Stops robot if VLA fails or crashes
-- **Joint Limits**: Enforced with configurable safety margins
-- **Emergency Stop**: Keyboard SPACE key or ROS service call
----
+- Multi-level velocity clamping across the VLA bridge, Servo, and controllers
+- Real-time collision monitoring with the planning scene
+- Automatic damping near singularities
+- Command timeout stopping the robot if VLA output stalls
+- Joint limits enforced with configurable safety margins
+- Emergency stop via the keyboard SPACE key or a ROS service call
 
+## License
+
+Released under the Apache 2.0 License. See [LICENSE](LICENSE) for details.

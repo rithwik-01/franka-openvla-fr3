@@ -1,39 +1,40 @@
-# ✅ MoveIt Servo Setup - COMPLETE
+# MoveIt Servo Setup
 
-## 🎉 Working Setup Summary
+## Overview
 
-Your FR3 robot now has fully functional MoveIt Servo keyboard teleoperation!
-
----
-
-## 📁 Final Package Structure
-
-### **Configuration Files:**
-- `config/servo_params.yaml` - MoveIt Servo configuration (FR3-specific)
-- `config/moveit_controllers.yaml` - Controller configuration
-
-### **Python Nodes:**
-- `franka_openvla/keyboard_servo_teleop.py` - Keyboard teleoperation node
-- `franka_openvla/openvla_node.py` - VLA integration node
-
-### **Launch Files:**
-- `launch/fr3.launch.py` - Main launch file (robot + MoveIt + Servo)
+This guide documents the verified MoveIt Servo configuration for the FR3 robot, including keyboard teleoperation. Follow the steps below to bring up the arm and drive it manually.
 
 ---
 
-## 🚀 How to Use
+## Package Structure
 
-### **1. Launch the Robot:**
+| Path | Purpose |
+| ---- | ------- |
+| `config/servo_params.yaml` | MoveIt Servo configuration (FR3-specific) |
+| `config/moveit_controllers.yaml` | Controller configuration |
+| `franka_openvla/keyboard_servo_teleop.py` | Keyboard teleoperation node |
+| `franka_openvla/openvla_node.py` | VLA integration node |
+| `launch/fr3.launch.py` | Main launch file (robot, MoveIt, and Servo) |
+
+---
+
+## Usage
+
+### 1. Launch the Robot
+
 ```bash
 docker exec vla_unified bash -c "source /opt/ros/humble/setup.bash && source /ros2_ws/install/setup.bash && ros2 launch franka_openvla fr3.launch.py"
 ```
 
-**Wait for:**
-- RViz window appears
+Wait until:
+
+- The RViz window appears
 - `[INFO] [moveit_ros.planning_scene_monitor.planning_scene_monitor]: Publishing maintained planning scene...`
 
-### **2. Launch Keyboard Teleop:**
-Open a new terminal:
+### 2. Launch Keyboard Teleoperation
+
+In a second terminal:
+
 ```bash
 docker exec -it vla_unified bash -c "source /opt/ros/humble/setup.bash && source /ros2_ws/install/setup.bash && ros2 run franka_openvla keyboard_servo_teleop"
 ```
@@ -42,14 +43,14 @@ docker exec -it vla_unified bash -c "source /opt/ros/humble/setup.bash && source
 ```
 [INFO] Keyboard Servo Teleop Initializing...
 [INFO] Waiting for servo services...
-[INFO] ✓ Servo services found. Starting servo...
-[INFO] ✓ Servo started successfully!
+[INFO] Servo services found. Starting servo...
+[INFO] Servo started successfully!
 [INFO] Keyboard Servo Teleop Ready!
 ```
 
-### **3. Control the Robot:**
+### 3. Control the Robot
 
-Press keys to move the robot:
+Use these keys to move the robot:
 
 | Key | Action | Direction |
 |-----|--------|-----------|
@@ -72,9 +73,9 @@ Press keys to move the robot:
 
 ---
 
-## ⚙️ Configuration Details
+## Configuration
 
-### **Servo Parameters (servo_params.yaml):**
+### Servo Parameters (servo_params.yaml)
 
 ```yaml
 # Robot Configuration
@@ -97,40 +98,42 @@ collision_check_rate: 10.0
 override_velocity_scaling_factor: 0.3  # 30% of max joint velocity
 ```
 
-### **Key Parameters Explained:**
+### Key Parameters
 
-- **move_group_name**: Must match SRDF group (`fr3_arm`)
+- **move_group_name**: SRDF group being driven (`fr3_arm`)
 - **planning_frame**: Base frame for commands (`fr3_link0`)
 - **ee_frame_name**: End-effector frame (`fr3_hand_tcp`)
-- **robot_link_command_frame**: ⚠️ **Critical!** Frame for validating twist commands
-- **command_in_type**: `"unitless"` = joystick-style, `"speed_units"` = m/s
-- **scale**: Maximum velocities when input = ±1.0
+- **robot_link_command_frame**: Frame used to validate twist commands (`fr3_link0`)
+- **command_in_type**: `"unitless"` means joystick-style input; `"speed_units"` means m/s
+- **scale**: Maximum velocities reached when the input equals ±1.0
 
 ---
 
-## 🔧 Issues Fixed
+## Issues Fixed
 
-### **Problem 1: Wrong YAML Format**
-- ❌ Had: `/**:` / `ros__parameters:` wrapper
-- ✅ Fixed: Flat YAML wrapped in `{"moveit_servo": ...}` by launch file
+Four configuration problems surfaced during setup. Each fix is recorded below so the failure mode stays documented.
 
-### **Problem 2: Invalid Move Group**
-- ❌ Had: Default `panda_arm` from MoveIt Servo
-- ✅ Fixed: Explicit `move_group_name: "fr3_arm"`
+### Problem 1: Wrong YAML Format
+- Before: `/**:` / `ros__parameters:` wrapper
+- After: Flat YAML wrapped in `{"moveit_servo": ...}` by launch file
 
-### **Problem 3: Missing robot_link_command_frame**
-- ❌ Had: Default `panda_link0` causing crash
-- ✅ Fixed: Added `robot_link_command_frame: "fr3_link0"`
+### Problem 2: Invalid Move Group
+- Before: Default `panda_arm` from MoveIt Servo
+- After: Explicit `move_group_name: "fr3_arm"`
 
-### **Problem 4: Servo Not Starting**
-- ❌ Had: Removed start/stop service calls
-- ✅ Fixed: Restored `/servo_node/start_servo` service call in teleop
+### Problem 3: Missing robot_link_command_frame
+- Before: Default `panda_link0` causing crash
+- After: Added `robot_link_command_frame: "fr3_link0"`
+
+### Problem 4: Servo Not Starting
+- Before: Removed start/stop service calls
+- After: Restored `/servo_node/start_servo` service call in teleop
 
 ---
 
-## 🎯 VLA Integration
+## VLA Integration
 
-To integrate with your VLA model, publish to the same topic:
+To drive the arm from a VLA model instead of the keyboard, publish to the same topic:
 
 ```python
 from geometry_msgs.msg import TwistStamped
@@ -163,15 +166,16 @@ class VLANode(Node):
         self.twist_pub.publish(msg)
 ```
 
-**Important:**
+**Publishing requirements:**
+
 - Publish at 10-30 Hz for smooth motion
-- Use `stamp: now` for every message
-- Scale values to [-1, 1] range for unitless mode
-- Start servo service before publishing
+- Stamp every message with the current time
+- Scale values to the [-1, 1] range in unitless mode
+- Start the Servo service before publishing
 
 ---
 
-## 📊 System Architecture
+## System Architecture
 
 ```
 ┌─────────────────┐
@@ -200,39 +204,42 @@ class VLANode(Node):
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
-### **Robot not moving?**
-1. Check servo started: Look for "✓ Servo started successfully!"
-2. Check topic: `ros2 topic hz /servo_node/delta_twist_cmds` (should show ~10 Hz)
-3. Check servo output: `ros2 topic hz /arm_controller/joint_trajectory`
-4. Check controller: `ros2 control list_controllers` (arm_controller should be active)
+### Robot Not Moving
 
-### **Servo crashed?**
-- Check launch output for errors
+1. Confirm Servo started by looking for "Servo started successfully!"
+2. Check the command topic rate: `ros2 topic hz /servo_node/delta_twist_cmds` (expect about 10 Hz)
+3. Check the Servo output: `ros2 topic hz /arm_controller/joint_trajectory`
+4. Check the controllers: `ros2 control list_controllers` (`arm_controller` should be active)
+
+### Servo Crashed
+
+- Inspect the launch output for errors
 - Verify all frames exist: `ros2 run tf2_ros tf2_echo world fr3_link0`
-- Restart launch file
+- Restart the launch file
 
-### **"Invalid link" error?**
-- Ensure `robot_link_command_frame` matches robot URDF links
-- Use `fr3_link0` for FR3 robot
+### Invalid Link Error
+
+- Make sure `robot_link_command_frame` matches a link in the robot URDF
+- Use `fr3_link0` for the FR3 robot
 
 ---
 
-## 📚 Configuration Reference
+## Reference
 
-### **Official MoveIt Servo Docs:**
+### MoveIt Servo Documentation
 - Tutorial: https://moveit.picknik.ai/humble/doc/examples/realtime_servo/
 - Parameters: https://docs.ros.org/en/humble/p/moveit_servo/
 
-### **Key Files:**
+### Key Files
 - Servo config: `src/franka_openvla/config/servo_params.yaml`
 - Launch file: `src/franka_openvla/launch/fr3.launch.py`
 - Teleop node: `src/franka_openvla/franka_openvla/keyboard_servo_teleop.py`
 
 ---
 
-## ✅ Verification Checklist
+## Verification Checklist
 
 - [x] Servo node launches without errors
 - [x] Move group name is `fr3_arm`
@@ -247,12 +254,11 @@ class VLANode(Node):
 
 ---
 
-## 🎉 Success!
+## Next Steps
 
-Your MoveIt Servo setup is complete and tested! You can now:
-1. ✅ Control FR3 robot with keyboard
-2. ✅ Integrate with VLA for autonomous control
-3. ✅ Use delta pose commands for reactive motion
-4. ✅ All safety features enabled (collision, limits, singularity)
+The MoveIt Servo setup is complete and verified. Suggested follow-ups:
 
-**Ready for VLA integration!** 🤖🚀
+1. Drive the FR3 robot with keyboard teleoperation
+2. Connect the VLA model for autonomous control
+3. Exercise delta pose commands for reactive motion
+4. Keep the safety features enabled (collision checking, joint limits, singularity avoidance)

@@ -1,20 +1,19 @@
 # VLA Practitioner Project Proposals
-## Your Path to VLA Expertise on Consumer Hardware
+## Building VLA Expertise on Consumer Hardware
 
-**Author:** Generated for your learning journey
 **Hardware:** RTX 4060 8GB VRAM, 16GB RAM
 **Timeline:** 3 months (January - March 2025)
-**Goal:** Build deep VLA expertise through high-impact practical projects
+**Goal:** Build working VLA expertise through focused, practical projects
 
 ---
 
-# 🥇 PROJECT #1: 8GB VLA BENCHMARK & OPTIMIZATION SUITE
+# Project 1: 8GB VLA Benchmark and Optimization Suite
 
 ## Executive Summary
 
 **The Problem:** VLA models (OpenVLA-7B) require 15GB+ VRAM, making them inaccessible to most practitioners with consumer GPUs. No comprehensive resource exists showing which models work on 8GB GPUs, how to optimize them, or performance tradeoffs.
 
-**Your Solution:** Create the definitive guide and benchmark suite for running VLA models on consumer hardware (8GB GPUs), demonstrating optimization techniques (quantization, ONNX, TensorRT) that achieve 10-15x speedups.
+**Proposed approach:** Create the definitive guide and benchmark suite for running VLA models on consumer hardware (8GB GPUs), demonstrating optimization techniques (quantization, ONNX, TensorRT) that achieve 10-15x speedups.
 
 **Impact:** Democratize VLA research for thousands of practitioners who can't afford $2000+ GPUs.
 
@@ -193,11 +192,11 @@ class VLABenchmark:
 
 | Model | Quantization | VRAM (GB) | Speed (Hz) | LIBERO Success |
 |-------|-------------|-----------|------------|----------------|
-| OpenVLA-7B | bf16 | ❌ OOM | - | - |
-| OpenVLA-7B | 8-bit | ~9GB ❌ | - | - |
-| OpenVLA-7B | 4-bit | ~6GB ✅ | 1-2 Hz | TBD |
-| SmolVLA-450M | fp16 | ~2GB ✅ | 15-20 Hz | TBD |
-| Octo-Small-27M | fp16 | ~0.5GB ✅ | 30-40 Hz | TBD |
+| OpenVLA-7B | bf16 | OOM (out of memory) | - | - |
+| OpenVLA-7B | 8-bit | ~9GB (exceeds budget) | - | - |
+| OpenVLA-7B | 4-bit | ~6GB (fits) | 1-2 Hz | TBD |
+| SmolVLA-450M | fp16 | ~2GB (fits) | 15-20 Hz | TBD |
+| Octo-Small-27M | fp16 | ~0.5GB (fits) | 30-40 Hz | TBD |
 
 **Deliverable:** CSV with all metrics, initial findings document
 
@@ -488,7 +487,6 @@ def analyze_speed_accuracy_tradeoff():
 ## Deliverables
 
 ### 1. GitHub Repository
-- ⭐ Target: 500-1000 stars within 3 months
 - Complete codebase with documentation
 - Reproducible benchmark scripts
 - Pre-optimized model links
@@ -595,13 +593,13 @@ def analyze_speed_accuracy_tradeoff():
 
 ---
 
-# 🥈 PROJECT #2: MUJOCO-TO-LEROBOT DATA PIPELINE
+# Project 2: MuJoCo-to-LeRobot Data Pipeline
 
 ## Executive Summary
 
 **The Problem:** LeRobot needs diverse community datasets, but no easy way exists to contribute MuJoCo simulation data in LeRobot format.
 
-**Your Solution:** Create complete pipeline (tools + tutorial + example datasets) enabling anyone to contribute MuJoCo data to LeRobot.
+**Proposed approach:** Create a complete pipeline (tools + tutorial + example datasets) enabling anyone to contribute MuJoCo data to LeRobot.
 
 **Impact:** Enable 100+ researchers to contribute datasets, diversifying robot learning data.
 
@@ -859,13 +857,13 @@ converter.save_to_hub("your-username/mujoco-drawer-opening", metadata)
 
 ---
 
-# 🥉 PROJECT #3: LIBERO-STRESS ROBUSTNESS BENCHMARK
+# Project 3: LIBERO-Stress Robustness Benchmark
 
 ## Executive Summary
 
 **The Problem:** Recent research (LIBERO-PRO, Oct 2024) showed VLA models memorize instead of understand—90% accuracy drops to 0% with small changes.
 
-**Your Solution:** Automated testing suite that stresses VLA models with perturbations, revealing memorization vs true understanding.
+**Proposed approach:** Automated testing suite that stresses VLA models with perturbations, revealing memorization vs true understanding.
 
 **Impact:** Become the standard robustness evaluation tool, pushing VLA research toward genuine intelligence.
 
@@ -1021,7 +1019,7 @@ class RobustnessBenchmark:
 
 ---
 
-# 📅 EXECUTION TIMELINE
+# Execution Timeline
 
 ## Month 1: Project #1 (8GB VLA Benchmark)
 
@@ -1056,7 +1054,7 @@ class RobustnessBenchmark:
 
 ---
 
-# 🎯 FINAL RECOMMENDATIONS
+# Final Recommendations
 
 ## Start This Week
 
@@ -1110,6 +1108,6 @@ End of each month:
 
 ---
 
-**You have everything you need to start. Begin with Project #1 today.**
+**You have everything you need to start. Begin with Project 1 this week.**
 
-Good luck! 🚀
+Good luck.
